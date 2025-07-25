@@ -26,6 +26,12 @@ export interface CollectionRow {
   updated_at: string
 }
 
+export interface WishlistRow {
+  email: string
+  card_id: string
+  updated_at: string
+}
+
 export interface Expansion {
   name: string
   id: ExpansionId

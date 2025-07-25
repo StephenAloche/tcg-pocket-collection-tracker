@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button.tsx'
 import { supabase } from '@/lib/Auth.ts'
 import { CollectionContext } from '@/lib/context/CollectionContext.ts'
 import { type User, UserContext } from '@/lib/context/UserContext.ts'
+import { wishlistRepository } from '@/lib/repositories/wishlistRepository'
 import { getCardNameByLang } from '@/lib/utils'
 import type { Card as CardType, CollectionRow } from '@/types'
 import i18n from 'i18next'
-import { MinusIcon, PlusIcon } from 'lucide-react'
+import { HeartIcon, MinusIcon, PlusIcon } from 'lucide-react'
 import { use, useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router'
 
@@ -27,7 +28,7 @@ export function Card({ card, useMaxWidth = false, editable = true }: CardProps) 
   }
 
   const { user, setIsLoginDialogOpen } = use(UserContext)
-  const { ownedCards, setOwnedCards, setSelectedCardId } = use(CollectionContext)
+  const { ownedCards, setOwnedCards, setSelectedCardId, wishlistCards, setWishlistCards } = use(CollectionContext)
   const [amountOwned, setAmountOwned] = useState(card.amount_owned || 0)
   const [inputValue, setInputValue] = useState(0)
 
@@ -66,6 +67,17 @@ export function Card({ card, useMaxWidth = false, editable = true }: CardProps) 
     [ownedCards, user, setOwnedCards, amountOwned],
   )
 
+  const isWishlisted = wishlistCards.some((row) => row.card_id === card.card_id)
+
+  const addWishlistCard = async (cardId: string) => {
+    if (!user) {
+      setIsLoginDialogOpen(true)
+      return
+    }
+    const updatedWishlist = wishlistRepository.toggleWishlist(cardId)
+    setWishlistCards([...updatedWishlist])
+  }
+
   const addCard = useCallback(
     async (cardId: string) => {
       if (!user) {
@@ -94,7 +106,6 @@ export function Card({ card, useMaxWidth = false, editable = true }: CardProps) 
       await updateCardCount(card.card_id, value)
     }
   }
-
   return (
     <div className={`group flex w-fit ${!useMaxWidth ? 'max-w-32 md:max-w-40' : ''} flex-col items-center rounded-lg`}>
       <div className="cursor-pointer" onClick={() => setSelectedCardId(card.card_id)}>
@@ -122,6 +133,9 @@ export function Card({ card, useMaxWidth = false, editable = true }: CardProps) 
             />
             <Button variant="ghost" size="icon" className="rounded-full" onClick={() => addCard(card.card_id)} tabIndex={-1}>
               <PlusIcon />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => addWishlistCard(card.card_id)}>
+              <HeartIcon {...(isWishlisted ? { fill: 'white' } : {})} />
             </Button>
           </>
         ) : (
